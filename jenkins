@@ -1,0 +1,69 @@
+pipeline {
+    agent any
+
+    parameters {
+        choice(
+            name: 'ACTION',
+            choices: ['apply', 'destroy'],
+            description: 'Select the Terraform action to perform.'
+        )
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+            checkout scm
+            }
+        }
+        stage('Initialize Terraform') {
+            steps {
+                echo "Initializing Terraform..."
+                sh '''
+                    terraform init
+                '''
+            }
+        }
+
+        stage('Terraform Plan') {
+            steps {
+                echo "Running Terraform plan..."
+                sh '''
+                    terraform plan -out=tfplan
+                '''
+            }
+        }
+
+        stage('Terraform Apply') {
+            when {
+                expression { params.ACTION == 'apply' }
+            }
+            steps {
+                echo "Applying Terraform changes..."
+                sh '''
+                    terraform apply -auto-approve tfplan
+                '''
+            }
+        }
+
+        stage('Terraform Destroy') {
+            when {
+                expression { params.ACTION == 'destroy' }
+            }
+            steps {
+                echo "Destroying Terraform-managed infrastructure..."
+                sh '''
+                    terraform destroy -auto-approve
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Terraform ${params.ACTION} completed successfully!"
+        }
+        failure {
+            echo "Terraform ${params.ACTION} failed. Check logs for details."
+        }
+    }
+}
