@@ -32,7 +32,7 @@ pipeline {
             steps {
                 echo "Running Terraform plan..."
                 sh '''
-                    terraform plan -out=tfplan
+                    terraform plan 
                 '''
             }
         }
